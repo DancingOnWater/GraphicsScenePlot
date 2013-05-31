@@ -26,7 +26,7 @@ public:
 
     void setAxisText(int axisNumber, const QString & text);
     QString axisText(int axisNumber);
-    void setAxisTextFont(int axisNumber, const QFont & text);
+    void setAxisTextFont(int axisNumber, const QFont & font);
     QFont axisTextFont(int axisNumber);
 
     void setRect(const QRectF& rect);

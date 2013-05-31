@@ -1,6 +1,7 @@
 #include "GraphicsPlotItem.h"
 #include <QPainter>
 #include <qmath.h>
+#include <QDebug>
 class GraphicsPlotItemPrivate
 {
     Q_DECLARE_PUBLIC(GraphicsPlotItem)
@@ -33,19 +34,30 @@ GraphicsPlotItemPrivate::GraphicsPlotItemPrivate(GraphicsPlotItem* parent)
 
 void GraphicsPlotItemPrivate::compose()
 {
+    titleText->setFont(titleFont);
+        abscissText->setFont(abscissFont);
     if(titleText->boundingRect().width() > rect.width()){
         //TODO case when titleText too long
     }
 
-    //Composite with each orther
+    //Composite by height
     qreal dataHeight = rect.height() - 2*titleText->boundingRect().height() - 2*(abscissText->boundingRect().height());
     if(dataHeight < 0.5*rect.height()){
         //TODO decrease font size
     }
 
     titleText->setPos((rect.width()-titleText->boundingRect().width())/2.0, rect.y());
-    qreal dataWidth = rect.width();
-    dataRect->setRect(0, 2*titleText->boundingRect().height() , dataWidth, dataHeight);
+
+    //Compose by width
+    qreal dataWidth = rect.width()-2*ordinateText->boundingRect().height();
+    if(dataWidth< 0.5*rect.width()){
+        //TODO decrease font size
+    }
+    dataRect->setRect(0, 0 , dataWidth, dataHeight);
+        dataRect->setPos(rect.width()-dataWidth, 2*titleText->boundingRect().height());
+
+    abscissText->setPos( (dataWidth - abscissText->boundingRect().width())/2.0+dataRect->x(), rect.bottom() - abscissText->boundingRect().height());
+        ordinateText->setPos(0, (dataHeight - ordinateText->boundingRect().width())/2.0+dataRect->y());
     q_ptr->update();
 }
 
@@ -69,6 +81,7 @@ void GraphicsPlotItem::setTitle(const QString &text)
 
 QString GraphicsPlotItem::title() const
 {
+    return d_ptr->titleText->text();
 }
 
 void GraphicsPlotItem::setAxisText(int axisNumber, const QString &text)
@@ -81,23 +94,33 @@ void GraphicsPlotItem::setAxisText(int axisNumber, const QString &text)
 void GraphicsPlotItem::setTitleFont(const QFont &font)
 {
     d_ptr->titleFont = font;
+    d_ptr->compose();
 }
 
 QFont GraphicsPlotItem::titleFont()
 {
-    d_ptr->titleFont;
+    return  d_ptr->titleFont;
 }
 
 QString GraphicsPlotItem::axisText(int axisNumber)
 {
+    QGraphicsSimpleTextItem *useText = *(&(d_ptr->abscissText) + axisNumber);
+    return useText->text();
 }
 
-void GraphicsPlotItem::setAxisTextFont(int axisNumber, const QFont &text)
-{
+void GraphicsPlotItem::setAxisTextFont(int axisNumber, const QFont &font)
+{   if(axisNumber == 0)
+        d_ptr->abscissFont= font;
+    else
+        d_ptr->ordinaateFont = font;
+    d_ptr->compose();
 }
 
 QFont GraphicsPlotItem::axisTextFont(int axisNumber)
 {
+    if(axisNumber == 0)
+        return d_ptr->abscissFont;
+     return d_ptr->ordinaateFont;
 }
 
 void GraphicsPlotItem::setRect(const QRectF &rect)
@@ -105,9 +128,7 @@ void GraphicsPlotItem::setRect(const QRectF &rect)
     Q_D(GraphicsPlotItem);
     prepareGeometryChange();
     d->rect = rect;
-    d_func()->titleText->setFont(d_func()->titleFont);
-        d_func()->abscissText->setFont(d_func()->abscissFont);
-
+    d->compose();
 }
 
 QRectF GraphicsPlotItem::rect()
