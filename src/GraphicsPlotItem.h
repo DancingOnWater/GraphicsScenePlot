@@ -32,9 +32,6 @@ public:
     void setRect(const QRectF& rect);
     QRectF rect();
 
-    void setDataRect(const QRectF &rect);
-    QRectF dataRect();
-
     void setAxisRange(int axisNumber, double min, double max);
     inline void setAbscissaRange(double min, double max){setAxisRange(0, min, max);}
     inline void setOrdinateRange(double min, double max){setAxisRange(1, min, max);}

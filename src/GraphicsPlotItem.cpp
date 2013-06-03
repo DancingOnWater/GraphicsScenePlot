@@ -1,21 +1,21 @@
 #include "GraphicsPlotItem.h"
 #include <QPainter>
 #include <qmath.h>
-#include <QDebug>
 
-
-class Graphics2DPlotGrid: public QGraphicsRectItem
+class Graphics2DPlotGrid: public QGraphicsItem
 {
 public:
     Graphics2DPlotGrid(QGraphicsItem * parent);
+    QRectF boundingRect() const;
+    const QRectF & rect() const;
     void setRange(int axisNumber, double min, double max);
-    inline void setRect(const QRectF &rect) {setRect(rect.x(), rect.y(), rect.width(), rect.height());}
-    void setRect(qreal x, qreal y, qreal w, qreal h);
 
     void setMainGrid(int axisNumber, double zero, double step);
     void setSecondaryGrid(int axisNumber, double zero, double step);
     void setMainGridPen(const QPen & pen);
     void setSecondaryGridPen(const QPen &pen);
+    inline QPen mainGridPen(){return m_mainPen;}
+    inline QPen secondaryGridPen(){return m_secondaryPen;}
     void setNocksFont(const QFont & font);
     inline QFont nocksFont()const{return m_NocksFont;}
 
@@ -26,7 +26,7 @@ private:
     void autoSetGrid();
     void calculateOrdinateGrid();
     void calculateAbscissGrid();
-    void paintAxeGuiLines(const AxisGuideLines& axe, QPainter *painter);
+    void paintAxeGuidLines(const AxisGuideLines& axe, QPainter *painter);
 private:
     struct Range{
         double min;
@@ -47,7 +47,7 @@ private:
     };
     Range abscissRange;
     Range ordinateRange;
-    AxisGuideLines absicissGuideLines;
+    AxisGuideLines abscissGuideLines;
     AxisGuideLines ordinateGuideLines;
 
     QPen m_mainPen;
@@ -61,16 +61,21 @@ private:
     double abscissFactor;
     qreal ordinateTranslate;
     qreal abscissTranslate;
+
+    QTransform m_transform;
+
+    QRectF m_rect;
 };
 void Graphics2DPlotGrid::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    if(absicissGuideLines.showLines)
-        paintAxeGuiLines(absicissGuideLines, painter);
+    if(abscissGuideLines.showLines)
+        paintAxeGuidLines(abscissGuideLines, painter);
 
     if(ordinateGuideLines.showLines)
-        paintAxeGuiLines(ordinateGuideLines, painter);
+        paintAxeGuidLines(ordinateGuideLines, painter);
 
-    QGraphicsRectItem::paint(painter, option, widget);
+    painter->setPen(m_mainPen);
+    painter->drawRect(m_rect);
 }
 
 class GraphicsPlotItemPrivate
@@ -80,8 +85,9 @@ class GraphicsPlotItemPrivate
 
     GraphicsPlotItemPrivate(GraphicsPlotItem* parent);
     void compose();
+    void calculateAndSetTransForm();
 
-    Graphics2DPlotGrid * dataRect;
+    Graphics2DPlotGrid * gridItem;
     QGraphicsSimpleTextItem * abscissText;
     QGraphicsSimpleTextItem * ordinateText;
     QGraphicsSimpleTextItem *titleText;
@@ -90,20 +96,21 @@ class GraphicsPlotItemPrivate
     QFont abscissFont;
 
     QRectF rect;
+    QRectF m_sceneDataRect;
 };
 
 GraphicsPlotItemPrivate::GraphicsPlotItemPrivate(GraphicsPlotItem* parent)
 {
     q_ptr = parent;
     Q_Q(GraphicsPlotItem);
-    dataRect = new Graphics2DPlotGrid(q);
+    gridItem = new Graphics2DPlotGrid(q);
     titleText = new QGraphicsSimpleTextItem(q);
         abscissText = new QGraphicsSimpleTextItem(q);
         ordinateText = new QGraphicsSimpleTextItem(q);
     ordinateText->setRotation(-90);
-        dataRect->setFlag(QGraphicsItem::ItemClipsChildrenToShape);
-        dataRect->setRange(0, 1, 2);
-        dataRect->setRange(1, 1, 2);
+        gridItem->setFlag(QGraphicsItem::ItemClipsChildrenToShape);
+        gridItem->setRange(0, 1, 2);
+        gridItem->setRange(1, 1, 2);
 }
 
 void GraphicsPlotItemPrivate::compose()
@@ -127,12 +134,22 @@ void GraphicsPlotItemPrivate::compose()
     if(dataWidth< 0.5*rect.width()){
         //TODO decrease font size
     }
-    dataRect->setRect(0, 0 , dataWidth, dataHeight);
-        dataRect->setPos(rect.width()-dataWidth, 2*titleText->boundingRect().height());
+    m_sceneDataRect.setRect(rect.width()-dataWidth, 2*titleText->boundingRect().height() , dataWidth, dataHeight);
 
-    abscissText->setPos( (dataWidth - abscissText->boundingRect().width())/2.0+dataRect->x(), rect.bottom() - abscissText->boundingRect().height());
-        ordinateText->setPos(0, (dataHeight - ordinateText->boundingRect().width())/2.0+dataRect->y());
+    abscissText->setPos( (dataWidth - abscissText->boundingRect().width())/2.0 + m_sceneDataRect.y(), rect.bottom() - abscissText->boundingRect().height());
+        ordinateText->setPos(0, (dataHeight - ordinateText->boundingRect().width())/2.0 + m_sceneDataRect.y());
         q_ptr->update();
+    calculateAndSetTransForm();
+
+}
+
+void GraphicsPlotItemPrivate::calculateAndSetTransForm()
+{
+    double  scaleX = m_sceneDataRect.width()/gridItem->rect().width();
+        double scaleY = m_sceneDataRect.height()/gridItem->rect().height();
+    QTransform transform = QTransform::fromTranslate( - gridItem->rect().x()*scaleX + m_sceneDataRect.x(), - gridItem->rect().y()*scaleY +m_sceneDataRect.y());
+        transform.scale(scaleX, scaleY);
+    gridItem->setTransform(transform);
 }
 
 GraphicsPlotItem::GraphicsPlotItem(QGraphicsItem *parent):
@@ -209,19 +226,10 @@ QRectF GraphicsPlotItem::rect()
     return d_ptr->rect;
 }
 
-void GraphicsPlotItem::setDataRect(const QRectF &rect)
-{
-}
-
-
-QRectF GraphicsPlotItem::dataRect()
-{
-    return d_ptr->dataRect->rect();
-}
-
 void GraphicsPlotItem::setAxisRange(int axisNumber, double min, double max)
 {
-    d_ptr->dataRect->setRange(axisNumber, min, max);
+    d_ptr->gridItem->setRange(axisNumber, min, max);
+    d_ptr->calculateAndSetTransForm();
 }
 
 void GraphicsPlotItem::axisRange(int axisNumber, double *min, double *max)
@@ -234,16 +242,22 @@ void GraphicsPlotItem::setAxisAutoRange(int axisNumber, bool isAuto)
 
 void GraphicsPlotItem::setMainGridLinePen(const QPen &pen)
 {
-   d_ptr->dataRect->setMainGridPen(pen);
+    d_ptr->gridItem->setMainGridPen(pen);
+}
+
+QPen GraphicsPlotItem::mainGridLinePen()
+{
+    return d_ptr->gridItem->mainGridPen();
 }
 
 void GraphicsPlotItem::setSecondaryGridLine(const QPen &pen)
 {
-    d_ptr->dataRect->setSecondaryGridPen(pen);
+    d_ptr->gridItem->setSecondaryGridPen(pen);
 }
 
 QPen GraphicsPlotItem::secondayGridLinePen()
 {
+    return d_ptr->gridItem->secondaryGridPen();
 }
 
 void GraphicsPlotItem::setMainGridLine(int axisNumber, double zero, double step)
@@ -277,12 +291,23 @@ void GraphicsPlotItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *
 
 
 Graphics2DPlotGrid::Graphics2DPlotGrid(QGraphicsItem *parent):
-    QGraphicsRectItem(parent),
+    QGraphicsItem(parent),
     isAutoGrid(true)
 {
     ordinateFactor = 1;
-    m_secondaryPen = m_mainPen;
-    m_secondaryPen.setColor(Qt::gray);
+    m_mainPen.setCosmetic(true);
+        m_secondaryPen = m_mainPen;
+        m_secondaryPen.setColor(Qt::gray);
+}
+
+QRectF Graphics2DPlotGrid::boundingRect() const
+{
+    return m_rect;
+}
+
+const QRectF &Graphics2DPlotGrid::rect() const
+{
+    return m_rect;
 }
 
 void Graphics2DPlotGrid::setRange(int axisNumber, double min, double max)
@@ -302,19 +327,18 @@ void Graphics2DPlotGrid::setRange(int axisNumber, double min, double max)
     if( axisNumber ==0){
         abscissRange.min = min;
             abscissRange.max = max;
-        autoGridSetValue(&absicissGuideLines);
+        autoGridSetValue(&abscissGuideLines);
 
     }
     else{
         ordinateRange.min = min;
-        ordinateRange.max = max;
+            ordinateRange.max = max;
         autoGridSetValue(&ordinateGuideLines);
     }
-    QRectF r = rect();
-    abscissFactor =  (abscissRange.max - abscissRange.min)/r.width();
-        ordinateFactor = (ordinateRange.max-ordinateRange.min)/r.height();
-        abscissTranslate = abscissRange.min + r.x();
-        ordinateTranslate = ordinateRange.min + r.y();
+    m_rect.setRect(abscissRange.min, ordinateRange.min, abscissRange.max - abscissRange.min, ordinateRange.max - ordinateRange.min);
+//    QRectF r = rect();
+//    m_transform = QTransform::fromTranslate(-abscissRange.min*r.width()/(abscissRange.max - abscissRange.min) + r.x(), -ordinateRange.min*r.height()/(ordinateRange.max - ordinateRange.min) +r.y());
+//        m_transform.scale(r.width()/(abscissRange.max - abscissRange.min), r.height()/(ordinateRange.max-ordinateRange.min));
     calculateOrdinateGrid();
         calculateAbscissGrid();
 }
@@ -322,7 +346,7 @@ void Graphics2DPlotGrid::setRange(int axisNumber, double min, double max)
 
 void Graphics2DPlotGrid::calculateAbscissGrid()
 {
-    const QRectF r = rect();
+    const QRectF & r = m_rect;
     if(fabs(r.width()) < std::numeric_limits<float>::min()*5.0 || fabs(r.height()) < std::numeric_limits<float>::min()*5.0)
         return;
 
@@ -331,7 +355,6 @@ void Graphics2DPlotGrid::calculateAbscissGrid()
         int k;
         double minValue;
         int count;
-        qreal stepInScene;
 
         if(fabs(step) > std::numeric_limits<double>::min()*5.0 )
         {
@@ -339,14 +362,12 @@ void Graphics2DPlotGrid::calculateAbscissGrid()
             minValue = k*step+baseValue;
             count = (abscissRange.max - minValue)/step;
 
-            stepInScene = step/abscissFactor;
             //TODO додумать что делать, если направляющая всего одна
             if( count >0){
-                minValue -=abscissTranslate;
-                minValue /=abscissFactor;
+
                 drawLinesArray->resize(count);
                 for(int i = 0; i< count; i++){
-                    (*drawLinesArray)[i] = QLineF( minValue+i*stepInScene, r.y(), minValue+i*stepInScene, r.y()+r.height());
+                    (*drawLinesArray)[i] = QLineF( minValue+i*step, ordinateRange.min, minValue+i*step, ordinateRange.max);
                 }
             }
             else
@@ -356,13 +377,13 @@ void Graphics2DPlotGrid::calculateAbscissGrid()
             drawLinesArray->clear();
     };
 
-    calculteLine(absicissGuideLines.mainStep, absicissGuideLines.mainBaseValue, &(absicissGuideLines.main));
-        calculteLine(absicissGuideLines.secondaryStep, absicissGuideLines.secondaryBaseValue, &(absicissGuideLines.secondary));
+    calculteLine(abscissGuideLines.mainStep, abscissGuideLines.mainBaseValue, &(abscissGuideLines.main));
+        calculteLine(abscissGuideLines.secondaryStep, abscissGuideLines.secondaryBaseValue, &(abscissGuideLines.secondary));
 }
 
 void Graphics2DPlotGrid::calculateOrdinateGrid()
 {
-    const QRectF r = rect();
+    const QRectF & r = m_rect;
     if(fabs(r.width()) < std::numeric_limits<float>::min()*5.0 || fabs(r.height()) < std::numeric_limits<float>::min()*5.0)
         return;
 
@@ -371,7 +392,6 @@ void Graphics2DPlotGrid::calculateOrdinateGrid()
         int k;
         double minValue;
         int count;
-        qreal stepInScene;
 
         if(fabs(step) > std::numeric_limits<double>::min()*5.0 )
         {
@@ -379,14 +399,11 @@ void Graphics2DPlotGrid::calculateOrdinateGrid()
             minValue = k*step+baseValue;
             count = (ordinateRange.max - minValue)/step;
 
-            stepInScene = step/ordinateFactor;
             //TODO додумать что делать, если направляющая всего одна
             if( count >0){
-                minValue -=ordinateTranslate;
-                minValue /=ordinateFactor;
                 drawLinesArray->resize(count);
                 for(int i = 0; i< count; i++){
-                    (*drawLinesArray)[i] = QLineF(r.x(), minValue+i*stepInScene, r.x()+r.width(), minValue+i*stepInScene);
+                    (*drawLinesArray)[i] = QLineF(abscissRange.min, minValue+i*step, abscissRange.max,minValue+i*step);
                 }
             }
             else
@@ -400,7 +417,7 @@ void Graphics2DPlotGrid::calculateOrdinateGrid()
         calculteLine(ordinateGuideLines.secondaryStep, ordinateGuideLines.secondaryBaseValue, &(ordinateGuideLines.secondary));
 }
 
-void Graphics2DPlotGrid::paintAxeGuiLines(const AxisGuideLines& axe, QPainter *painter)
+void Graphics2DPlotGrid::paintAxeGuidLines(const AxisGuideLines& axe, QPainter *painter)
 {
     if(axe.showSecondaryLine){
         painter->setPen(m_secondaryPen);
@@ -412,25 +429,15 @@ void Graphics2DPlotGrid::paintAxeGuiLines(const AxisGuideLines& axe, QPainter *p
     }
 }
 
-void Graphics2DPlotGrid::setRect(qreal x, qreal y, qreal w, qreal h)
-{
-    abscissFactor = (abscissRange.max - abscissRange.min)/w;
-        ordinateFactor = (ordinateRange.max-ordinateRange.min)/h;
-        abscissTranslate = (abscissRange.min + x);
-        ordinateTranslate = ordinateRange.min +y;
-    QGraphicsRectItem::setRect(x, y, w, h);
-    calculateOrdinateGrid();
-        calculateAbscissGrid();
-}
-
-
 void Graphics2DPlotGrid::setSecondaryGridPen(const QPen &pen)
 {
     m_secondaryPen = pen;
+    m_secondaryPen.setCosmetic(true);
 }
 
 
 void Graphics2DPlotGrid::setMainGridPen(const QPen &pen)
 {
     m_mainPen = pen;
+    m_mainPen.setCosmetic(true);
 }
