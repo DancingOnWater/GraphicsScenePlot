@@ -22,3 +22,5 @@ else:unix: LIBS += -L$$OUT_PWD/../../src/ -lsrc
 
 INCLUDEPATH += $$PWD/../../src
 DEPENDPATH += $$PWD/../../src
+
+QMAKE_CXXFLAGS += -std=c++0x

@@ -16,6 +16,9 @@ SOURCES += GraphicsPlotItem.cpp
 HEADERS += GraphicsPlotItem.h \
     Global.h
 
+QMAKE_CXXFLAGS += -std=c++0x
+
+
 unix:!symbian {
     maemo5 {
         target.path = /opt/usr/lib
