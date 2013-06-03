@@ -31,12 +31,12 @@ void GraphicsPlotItemTest::simpleTestGrid()
     QGraphicsView graphicsView;
     QGraphicsScene * scene = new QGraphicsScene();
     graphicsView.setScene(scene);
-        graphicsView.setGeometry(0,0, 300, 300);
+        graphicsView.setGeometry(0,0, 520, 520);
     graphicsView.show();
 
     GraphicsPlotItem *plot = new GraphicsPlotItem();
         scene->addItem(plot);
-    plot->setRect(QRect(0, 0, 200, 200));
+    plot->setRect(QRect(0, 0, 500, 500));
     plot->setTitle(QString("Test title"));
         plot->setAxisText(0, QString("x"));
         plot->setAxisText(1, QString("y"));
