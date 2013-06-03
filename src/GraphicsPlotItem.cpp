@@ -9,6 +9,7 @@ public:
     QRectF boundingRect() const;
     const QRectF & rect() const;
     void setRange(int axisNumber, double min, double max);
+    void range(int axisNumber, double *min, double* max);
 
     void setMainGrid(int axisNumber, double zero, double step);
     void setSecondaryGrid(int axisNumber, double zero, double step);
@@ -57,17 +58,12 @@ private:
     QFont m_NocksFont;
     bool isAutoGrid;
 
-    double ordinateFactor;
-    double abscissFactor;
-    qreal ordinateTranslate;
-    qreal abscissTranslate;
-
-    QTransform m_transform;
-
     QRectF m_rect;
 };
 void Graphics2DPlotGrid::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+    Q_UNUSED(option)
+    Q_UNUSED(widget)
     if(abscissGuideLines.showLines)
         paintAxeGuidLines(abscissGuideLines, painter);
 
@@ -234,6 +230,7 @@ void GraphicsPlotItem::setAxisRange(int axisNumber, double min, double max)
 
 void GraphicsPlotItem::axisRange(int axisNumber, double *min, double *max)
 {
+    d_ptr->gridItem->range(axisNumber, min, max);
 }
 
 void GraphicsPlotItem::setAxisAutoRange(int axisNumber, bool isAuto)
@@ -260,7 +257,7 @@ QPen GraphicsPlotItem::secondayGridLinePen()
     return d_ptr->gridItem->secondaryGridPen();
 }
 
-void GraphicsPlotItem::setMainGridLine(int axisNumber, double zero, double step)
+void GraphicsPlotItem::setMainGridLine(int axisNumber, double baseValue, double step)
 {
 }
 
@@ -294,7 +291,6 @@ Graphics2DPlotGrid::Graphics2DPlotGrid(QGraphicsItem *parent):
     QGraphicsItem(parent),
     isAutoGrid(true)
 {
-    ordinateFactor = 1;
     m_mainPen.setCosmetic(true);
         m_secondaryPen = m_mainPen;
         m_secondaryPen.setColor(Qt::gray);
@@ -336,11 +332,20 @@ void Graphics2DPlotGrid::setRange(int axisNumber, double min, double max)
         autoGridSetValue(&ordinateGuideLines);
     }
     m_rect.setRect(abscissRange.min, ordinateRange.min, abscissRange.max - abscissRange.min, ordinateRange.max - ordinateRange.min);
-//    QRectF r = rect();
-//    m_transform = QTransform::fromTranslate(-abscissRange.min*r.width()/(abscissRange.max - abscissRange.min) + r.x(), -ordinateRange.min*r.height()/(ordinateRange.max - ordinateRange.min) +r.y());
-//        m_transform.scale(r.width()/(abscissRange.max - abscissRange.min), r.height()/(ordinateRange.max-ordinateRange.min));
     calculateOrdinateGrid();
-        calculateAbscissGrid();
+    calculateAbscissGrid();
+}
+
+void Graphics2DPlotGrid::range(int axisNumber, double *min, double *max)
+{
+    if(axisNumber == 0){
+        *min = abscissRange.min;
+        *max = abscissRange.max;
+    }
+    else{
+         *min = ordinateRange.min;
+        *max = ordinateRange.max;
+    }
 }
 
 

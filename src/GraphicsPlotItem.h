@@ -46,7 +46,7 @@ public:
     QPen mainGridLinePen();
     void setSecondaryGridLine(const QPen &pen);
     QPen secondayGridLinePen();
-    void setMainGridLine(int axisNumber, double zero, double step);
+    void setMainGridLine(int axisNumber, double baseValue, double step);
     void setSecondaryLineAuto(bool isAuto);
     void setSecondaryGridLine(int axisNumber, double step);
 
