@@ -38,9 +38,13 @@ public:
     void setAxisRange(int axisNumber, double min, double max);
     inline void setAbscissaRange(double min, double max){setAxisRange(0, min, max);}
     inline void setOrdinateRange(double min, double max){setAxisRange(1, min, max);}
+    void setAxisAutoRange(int axisNumber, bool isAuto);
 
     void axisRange(int axisNumber, double *min, double *max);
+    bool axisAutoRange(int axisNumber);
 
+    void setAutoGrid(bool value);
+    bool isAutoGrid();
     void setMainGridLinePen(const QPen& pen);
     QPen mainGridLinePen();
     void setSecondaryGridLine(const QPen &pen);
@@ -49,11 +53,12 @@ public:
     void setSecondaryLineAuto(bool isAuto);
     void setSecondaryGridLine(int axisNumber, double step);
 
-
-
     GraphicsGraphItem * addGraph(double *absciss, double *ordinate, qint32 length);
     void addDataItem(GraphicsDataItem *item);
 
+    void mapFromSceneToPlot(const QPointF & scenePoint, double *x, double *y);
+    QPointF mapFromSceneToPlot(const QPointF &scenePoint);
+    QPointF mapFromPlotToScene(double x, double y);
 
 private:
     Q_DECLARE_PRIVATE(GraphicsPlotItem)
