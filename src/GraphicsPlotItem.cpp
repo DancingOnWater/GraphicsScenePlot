@@ -1,7 +1,10 @@
 #include "GraphicsPlotItem.h"
+
 #include <QPainter>
 #include <qmath.h>
 
+
+#include "GraphicsDataItem.h"
 class Graphics2DPlotGrid: public QGraphicsItem
 {
 public:
@@ -266,12 +269,14 @@ void GraphicsPlotItem::setSecondaryLineAuto(bool isAuto)
 }
 
 
-GraphicsGraphItem *GraphicsPlotItem::addGraph(double *absciss, double *ordinate, qint32 length)
+Graphics2DGraphItem *GraphicsPlotItem::addGraph(double *absciss, double *ordinate, qint32 length)
 {
+    return (new Graphics2DGraphItem(absciss, ordinate, length, d_ptr->gridItem));
 }
 
 void GraphicsPlotItem::addDataItem(GraphicsDataItem *item)
 {
+    item->setParentItem(d_ptr->gridItem);
 }
 
 QRectF GraphicsPlotItem::boundingRect() const
@@ -333,7 +338,7 @@ void Graphics2DPlotGrid::setRange(int axisNumber, double min, double max)
     }
     m_rect.setRect(abscissRange.min, ordinateRange.min, abscissRange.max - abscissRange.min, ordinateRange.max - ordinateRange.min);
     calculateOrdinateGrid();
-    calculateAbscissGrid();
+        calculateAbscissGrid();
 }
 
 void Graphics2DPlotGrid::range(int axisNumber, double *min, double *max)

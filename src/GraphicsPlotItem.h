@@ -4,7 +4,7 @@
 #include "Global.h"
 
 class GraphicsPlotItemPrivate;
-class GraphicsGraphItem;
+class Graphics2DGraphItem;
 class GraphicsDataItem;
 
 /*!
@@ -50,12 +50,8 @@ public:
     void setSecondaryLineAuto(bool isAuto);
     void setSecondaryGridLine(int axisNumber, double step);
 
-    GraphicsGraphItem * addGraph(double *absciss, double *ordinate, qint32 length);
+    Graphics2DGraphItem * addGraph(double *absciss, double *ordinate, qint32 length);
     void addDataItem(GraphicsDataItem *item);
-
-    void mapFromSceneToPlot(const QPointF & scenePoint, double *x, double *y);
-    QPointF mapFromSceneToPlot(const QPointF &scenePoint);
-    QPointF mapFromPlotToScene(double x, double y);
 
 private:
     Q_DECLARE_PRIVATE(GraphicsPlotItem)

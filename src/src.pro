@@ -11,10 +11,12 @@ TEMPLATE = lib
 
 DEFINES += SRC_LIBRARY
 
-SOURCES += GraphicsPlotItem.cpp
+SOURCES += GraphicsPlotItem.cpp \
+    GraphicsDataItem.cpp
 
 HEADERS += GraphicsPlotItem.h \
-    Global.h
+    Global.h \
+    GraphicsDataItem.h
 
 QMAKE_CXXFLAGS += -std=c++0x
 
