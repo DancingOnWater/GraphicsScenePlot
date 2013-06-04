@@ -1,11 +1,13 @@
 #pragma once
-#include <QGraphicsItem>
+#include <QGraphicsObject>
+#include <QPainter>
 
 class GraphicsDataItemPrivate;
 class Graphics2DHistogramItemPrivate;
 class Graphics2DGraphItemPrivate;
-class GraphicsDataItem: public QGraphicsItem
+class GraphicsDataItem: public QGraphicsObject
 {
+    Q_OBJECT
 public:
     GraphicsDataItem(QGraphicsItem *parent =0);
     ~GraphicsDataItem();
@@ -18,6 +20,13 @@ public:
 
     void ordinateRange(double *min, double *max);
     void abscissRange(double *min, double *max);
+
+    void setTitle(const QString & title);
+    QString title();
+Q_SIGNALS:
+    void dataItemChange();
+    void penItemChange();
+    void titleChange();
 protected:
     void setOrdinateRange(double min, double max);
     void setAbscissRange(double min, double max);
@@ -29,6 +38,7 @@ private:
 
 class Graphics2DGraphItem: public GraphicsDataItem
 {
+    Q_OBJECT
 public:
     Graphics2DGraphItem(QGraphicsItem *parent =0);
     Graphics2DGraphItem(double *absciss, double *ordinate, int length, QGraphicsItem *parent =0);
@@ -47,6 +57,7 @@ private:
 
 class Graphics2DHistogramItem: public GraphicsDataItem
 {
+    Q_OBJECT
 public:
     Graphics2DHistogramItem(QGraphicsItem *parent =0);
     Graphics2DHistogramItem(double *absciss, double ordinate, int length, QGraphicsItem *parent =0);

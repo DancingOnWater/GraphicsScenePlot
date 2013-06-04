@@ -16,6 +16,7 @@ class GraphicsDataItemPrivate
 
     QPen m_pen;
     QBrush m_brush;
+    QString title;
 
     Range ordinateRange;
     Range abscissRange;
@@ -27,11 +28,11 @@ GraphicsDataItemPrivate::GraphicsDataItemPrivate()
 }
 
 GraphicsDataItem::GraphicsDataItem(QGraphicsItem *parent):
-    QGraphicsItem(parent),
+    QGraphicsObject(parent),
     d_ptr(new GraphicsDataItemPrivate())
 
 {
-
+    d_ptr->title = QString("Some data");
 }
 
 GraphicsDataItem::~GraphicsDataItem()
@@ -44,6 +45,7 @@ void GraphicsDataItem::setPen(const QPen &pen)
     Q_D(GraphicsDataItem);
     d->m_pen = pen;
     d->m_pen.setCosmetic(true);
+    Q_EMIT penItemChange();
 }
 
 QPen GraphicsDataItem::pen()
@@ -73,6 +75,17 @@ void GraphicsDataItem::abscissRange(double *min, double *max)
     Q_D(GraphicsDataItem);
     *min =d->abscissRange.min;
     *max = d->abscissRange.max;
+}
+
+void GraphicsDataItem::setTitle(const QString &title)
+{
+    d_ptr->title = title;
+    Q_EMIT titleChange();
+}
+
+QString GraphicsDataItem::title()
+{
+    return d_ptr->title;
 }
 
 void GraphicsDataItem::setOrdinateRange(double min, double max)
@@ -123,6 +136,7 @@ class Graphics2DGraphItemPrivate
         q_ptr->setOrdinateRange(ordinateRange.min, ordinateRange.max);
             q_ptr->setAbscissRange(abscissRange.min, abscissRange.max);
         q_ptr->update();
+        QMetaObject::invokeMethod(q_ptr, "dataItemChange");
     }
 
     QRect m_boundRect;
@@ -176,6 +190,14 @@ void Graphics2DGraphItem::paint(QPainter *painter, const QStyleOptionGraphicsIte
     painter->drawLines(d_ptr->m_lines);
 }
 
+
+QRectF Graphics2DHistogramItem::boundingRect() const
+{
+}
+
+void Graphics2DHistogramItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+}
 
 
 
