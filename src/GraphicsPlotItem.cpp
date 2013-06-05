@@ -1,9 +1,9 @@
 #include "GraphicsPlotItem.h"
 
 #include <QPainter>
+#include <QStaticText>
 #include <qmath.h>
-
-
+#include <QDebug>
 #include "GraphicsDataItem.h"
 class Graphics2DPlotGrid: public QGraphicsItem
 {
@@ -30,36 +30,35 @@ private:
     void autoSetGrid();
     void calculateOrdinateGrid();
     void calculateAbscissGrid();
-    void paintAxeGuidLines(const AxisGuideLines& axe, QPainter *painter);
+    void paintAxeGuidLines(const AxisGuideLines& axe, QPainter *painter, const QPen &linePen);
 private:
     struct Range{
         double min;
         double max;
     };
     struct AxisGuideLines {
-        AxisGuideLines():mainBaseValue(0.0), mainStep(0.0), secondaryStep(0.0), showMainLines(true), showSecondaryLine(true), showLines(true){}
-        double mainBaseValue;
-        double mainStep;
-        double secondaryBaseValue;
-        double secondaryStep;
-        QVector<QLineF> main;
-        QVector<QLineF> secondary;
-        QList<QGraphicsSimpleTextItem *> nocks;
-        bool showMainLines;
-        bool showSecondaryLine;
+        AxisGuideLines():baseValue(0.0), step(0.0), showLines(true),showNocks(true){}
+        QVector<QLineF> lines;
+        QList<QStaticText> nocks;
+        double baseValue;
+        double step;
         bool showLines;
+        bool showNocks;
     };
     Range abscissRange;
     Range ordinateRange;
-    AxisGuideLines abscissGuideLines;
-    AxisGuideLines ordinateGuideLines;
+    AxisGuideLines abscissMainLines;
+    AxisGuideLines abscissSecondaryLines;
+    AxisGuideLines ordinateMainLines;
+    AxisGuideLines ordinateSecondaryLines;
 
     QPen m_mainPen;
     QPen m_secondaryPen;
 
-    QList<QGraphicsSimpleTextItem *> abscissNocks;
     QFont m_NocksFont;
+    QPen m_nockPen;
     bool isAutoGrid;
+    bool isAutoSecondaryGrid;
 
     QRectF m_rect;
 };
@@ -67,12 +66,11 @@ void Graphics2DPlotGrid::paint(QPainter *painter, const QStyleOptionGraphicsItem
 {
     Q_UNUSED(option)
     Q_UNUSED(widget)
-    if(abscissGuideLines.showLines)
-        paintAxeGuidLines(abscissGuideLines, painter);
-
-    if(ordinateGuideLines.showLines)
-        paintAxeGuidLines(ordinateGuideLines, painter);
-
+    painter->setFont(m_NocksFont);
+    paintAxeGuidLines(abscissSecondaryLines, painter, m_secondaryPen);
+        paintAxeGuidLines(abscissMainLines, painter, m_mainPen);
+        paintAxeGuidLines(ordinateSecondaryLines, painter, m_secondaryPen);
+        paintAxeGuidLines(ordinateMainLines, painter, m_mainPen);
     painter->setPen(m_mainPen);
     painter->drawRect(m_rect);
 }
@@ -149,7 +147,7 @@ void GraphicsPlotItemPrivate::calculateAndSetTransForm()
     double  scaleX = m_sceneDataRect.width()/gridItem->rect().width();
         double scaleY = m_sceneDataRect.height()/gridItem->rect().height();
     QTransform transform = QTransform::fromTranslate( - gridItem->rect().x()*scaleX + m_sceneDataRect.x(), - gridItem->rect().y()*scaleY +m_sceneDataRect.y());
-        transform.scale(scaleX, scaleY);
+        transform.scale(scaleX, -scaleY);
     gridItem->setTransform(transform);
 }
 
@@ -293,7 +291,8 @@ void GraphicsPlotItem::setLegend(GraphicsPlotLegend *legend)
         d->m_legend->removeAllItem();
     }
     d->m_legend = legend;
-    if(d->m_legend != nullptr){
+    if(d->m_legend != nullptr)
+    {
         d->m_legend->setParentItem(this);
         QList<QGraphicsItem*> items = d->gridItem->childItems();
         for(int i =0; i< items.size(); ++i){
@@ -337,9 +336,12 @@ Graphics2DPlotGrid::Graphics2DPlotGrid(QGraphicsItem *parent):
     QGraphicsItem(parent),
     isAutoGrid(true)
 {
+    m_nockPen.setCosmetic(true);
     m_mainPen.setCosmetic(true);
         m_secondaryPen = m_mainPen;
         m_secondaryPen.setColor(Qt::gray);
+    abscissSecondaryLines.showNocks = false;
+        ordinateSecondaryLines.showNocks = false;
 }
 
 QRectF Graphics2DPlotGrid::boundingRect() const
@@ -356,26 +358,28 @@ void Graphics2DPlotGrid::setRange(int axisNumber, double min, double max)
 {
     if(min >= max)
         return;
-    auto autoGridSetValue = [&](AxisGuideLines * axe)
+    auto autoGridSetValue = [&](AxisGuideLines * guidesMain, AxisGuideLines *guidesSecondary)
     {
         if(isAutoGrid){
-            axe->mainBaseValue = min;
-            axe->mainStep = (max-min)/5.0;
-                axe->secondaryBaseValue = axe->mainBaseValue;
-                axe->secondaryStep = axe->mainStep/5.0;
+            guidesMain->baseValue = min;
+            guidesMain->step = (max-min)/5.0;
+        }
+        if(isAutoSecondaryGrid || isAutoGrid){
+                guidesSecondary->baseValue = guidesMain->baseValue;
+                guidesSecondary->step = guidesMain->step/5.0;
         }
     };
 
     if( axisNumber ==0){
         abscissRange.min = min;
             abscissRange.max = max;
-        autoGridSetValue(&abscissGuideLines);
+        autoGridSetValue(&abscissMainLines, &abscissSecondaryLines);
 
     }
     else{
         ordinateRange.min = min;
             ordinateRange.max = max;
-        autoGridSetValue(&ordinateGuideLines);
+        autoGridSetValue(&ordinateMainLines, &ordinateSecondaryLines);
     }
     m_rect.setRect(abscissRange.min, ordinateRange.min, abscissRange.max - abscissRange.min, ordinateRange.max - ordinateRange.min);
     calculateOrdinateGrid();
@@ -401,34 +405,39 @@ void Graphics2DPlotGrid::calculateAbscissGrid()
     if(fabs(r.width()) < std::numeric_limits<float>::min()*5.0 || fabs(r.height()) < std::numeric_limits<float>::min()*5.0)
         return;
 
-    auto calculteLine = [&] (double step, double baseValue, QVector<QLineF> *drawLinesArray)
+    auto calculteLine = [&] (AxisGuideLines* guides )
     {
         int k;
         double minValue;
         int count;
 
-        if(fabs(step) > std::numeric_limits<double>::min()*5.0 )
+        if(fabs(guides->step) > std::numeric_limits<double>::min()*5.0 )
         {
-            k = (abscissRange.min - baseValue)/step;
-            minValue = k*step+baseValue;
-            count = (abscissRange.max - minValue)/step;
+            k = (abscissRange.min - guides->baseValue)/guides->step;
+            minValue = k*guides->step+guides->baseValue;
+            count = (abscissRange.max - minValue)/guides->step;
 
             //TODO додумать что делать, если направляющая всего одна
             if( count >0){
-                drawLinesArray->resize(count);
+                guides->lines.resize(count);
+                guides->nocks.clear();
+                guides->nocks.reserve(count);
+                double guidCoordinate;
                 for(int i = 0; i< count; i++){
-                    (*drawLinesArray)[i] = QLineF( minValue+i*step, ordinateRange.min, minValue+i*step, ordinateRange.max);
+                    guidCoordinate = minValue+i*guides->step;
+                    guides->lines[i] = QLineF( guidCoordinate , ordinateRange.max, guidCoordinate, ordinateRange.min);
+                    guides->nocks.append(QStaticText(QString::number(guidCoordinate)));
                 }
             }
             else
-                drawLinesArray->clear();
+                guides->lines.clear();
         }
         else
-            drawLinesArray->clear();
+            guides->lines.clear();
     };
 
-    calculteLine(abscissGuideLines.mainStep, abscissGuideLines.mainBaseValue, &(abscissGuideLines.main));
-        calculteLine(abscissGuideLines.secondaryStep, abscissGuideLines.secondaryBaseValue, &(abscissGuideLines.secondary));
+    calculteLine(&abscissMainLines);
+        calculteLine(&abscissSecondaryLines);
 }
 
 void Graphics2DPlotGrid::calculateOrdinateGrid()
@@ -437,45 +446,55 @@ void Graphics2DPlotGrid::calculateOrdinateGrid()
     if(fabs(r.width()) < std::numeric_limits<float>::min()*5.0 || fabs(r.height()) < std::numeric_limits<float>::min()*5.0)
         return;
 
-    auto calculteLine = [&] (double step, double baseValue, QVector<QLineF> *drawLinesArray)
+    auto calculteLine = [&] (AxisGuideLines* guides )
     {
         int k;
         double minValue;
         int count;
 
-        if(fabs(step) > std::numeric_limits<double>::min()*5.0 )
+        if(fabs(guides->step) > std::numeric_limits<double>::min()*5.0 )
         {
-            k = (ordinateRange.min - baseValue)/step;
-            minValue = k*step+baseValue;
-            count = (ordinateRange.max - minValue)/step;
+            k = (ordinateRange.min - guides->baseValue)/guides->step;
+            minValue = k*guides->step+guides->baseValue;
+            count = (ordinateRange.max - minValue)/guides->step;
 
             //TODO додумать что делать, если направляющая всего одна
             if( count >0){
-                drawLinesArray->resize(count);
+                guides->lines.resize(count);
+                guides->nocks.clear();
+                guides->nocks.reserve(count);
+                double guidCoordinate;
                 for(int i = 0; i< count; i++){
-                    (*drawLinesArray)[i] = QLineF(abscissRange.min, minValue+i*step, abscissRange.max,minValue+i*step);
+                    guidCoordinate = minValue+i*guides->step;
+                    guides->lines[i] = QLineF(abscissRange.max, guidCoordinate, abscissRange.min, guidCoordinate);
+                    guides->nocks.append(QStaticText(QString::number(guidCoordinate)));
                 }
             }
             else
-                drawLinesArray->clear();
+                guides->lines.clear();
         }
         else
-            drawLinesArray->clear();
+            guides->lines.clear();
     };
 
-    calculteLine(ordinateGuideLines.mainStep, ordinateGuideLines.mainBaseValue, &(ordinateGuideLines.main));
-        calculteLine(ordinateGuideLines.secondaryStep, ordinateGuideLines.secondaryBaseValue, &(ordinateGuideLines.secondary));
+    calculteLine(&ordinateMainLines);
+        calculteLine(&ordinateSecondaryLines);
 }
 
-void Graphics2DPlotGrid::paintAxeGuidLines(const AxisGuideLines& axe, QPainter *painter)
+void Graphics2DPlotGrid::paintAxeGuidLines(const AxisGuideLines& axe, QPainter *painter, const QPen &linePen)
 {
-    if(axe.showSecondaryLine){
-        painter->setPen(m_secondaryPen);
-        painter->drawLines(axe.secondary);
+    if(axe.showLines){
+        painter->setPen(linePen);
+        painter->drawLines(axe.lines);
     }
-    if(axe.showMainLines){
-        painter->setPen(m_mainPen);
-        painter->drawLines(axe.main);
+
+    if(axe.showNocks){
+        QTransform transform = painter->transform();
+        painter->resetTransform();
+        painter->setPen(m_nockPen);
+        for(int i =0; i <axe.nocks.size(); ++i)
+            painter->drawStaticText(transform.map(axe.lines.at(i).p2()), axe.nocks.at(i));
+        painter->setTransform(transform);
     }
 }
 
