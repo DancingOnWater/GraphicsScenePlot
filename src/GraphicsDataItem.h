@@ -2,6 +2,8 @@
 #include <QGraphicsObject>
 #include <QPainter>
 
+#include "Global.h"
+
 class GraphicsDataItemPrivate;
 class Graphics2DHistogramItemPrivate;
 class Graphics2DGraphItemPrivate;
@@ -23,6 +25,8 @@ public:
 
     void setTitle(const QString & title);
     QString title();
+
+    inline int type() const {return GraphicsPlot::DataType;}
 Q_SIGNALS:
     void dataItemChange();
     void penItemChange();

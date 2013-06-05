@@ -10,8 +10,11 @@ class GraphicsPlotLegend : public QGraphicsObject
     Q_OBJECT
 public:
     explicit GraphicsPlotLegend(QGraphicsItem *parent = 0);
+    GraphicsPlotLegend(const QRectF & rect, QGraphicsItem *parent =0);
     ~GraphicsPlotLegend();
     void addDataItem(GraphicsDataItem * item);
+    void removeItem(GraphicsDataItem *item);
+    void removeAllItem();
     void setRect(const QRectF &rect);
     QRectF rect();
     void setPen(const QPen & pen);

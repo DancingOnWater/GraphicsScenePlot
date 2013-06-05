@@ -96,6 +96,7 @@ class GraphicsPlotItemPrivate
 
     QRectF rect;
     QRectF m_sceneDataRect;
+    GraphicsPlotLegend *m_legend;
 };
 
 GraphicsPlotItemPrivate::GraphicsPlotItemPrivate(GraphicsPlotItem* parent)
@@ -110,6 +111,7 @@ GraphicsPlotItemPrivate::GraphicsPlotItemPrivate(GraphicsPlotItem* parent)
         gridItem->setFlag(QGraphicsItem::ItemClipsChildrenToShape);
         gridItem->setRange(0, 1, 2);
         gridItem->setRange(1, 1, 2);
+    m_legend = nullptr;
 }
 
 void GraphicsPlotItemPrivate::compose()
@@ -271,12 +273,51 @@ void GraphicsPlotItem::setSecondaryLineAuto(bool isAuto)
 
 Graphics2DGraphItem *GraphicsPlotItem::addGraph(double *absciss, double *ordinate, qint32 length)
 {
-    return (new Graphics2DGraphItem(absciss, ordinate, length, d_ptr->gridItem));
+    Graphics2DGraphItem * ptr = new Graphics2DGraphItem(absciss, ordinate, length);
+        addDataItem(ptr);
+    return ptr;
 }
 
 void GraphicsPlotItem::addDataItem(GraphicsDataItem *item)
 {
     item->setParentItem(d_ptr->gridItem);
+    if(d_ptr->m_legend != nullptr)
+        d_ptr->m_legend->addDataItem(item);
+}
+
+void GraphicsPlotItem::setLegend(GraphicsPlotLegend *legend)
+{
+    Q_D(GraphicsPlotItem);
+    if(d->m_legend != nullptr){
+        d->m_legend->setParent(nullptr);
+        d->m_legend->removeAllItem();
+    }
+    d->m_legend = legend;
+    if(d->m_legend != nullptr){
+        d->m_legend->setParentItem(this);
+        QList<QGraphicsItem*> items = d->gridItem->childItems();
+        for(int i =0; i< items.size(); ++i){
+            if(items.at(i)->type() == GraphicsPlot::DataType){
+                d->m_legend->addDataItem(static_cast<GraphicsDataItem*>(items.at(i)));
+            }
+        }
+    }
+}
+
+GraphicsPlotLegend *GraphicsPlotItem::legend()
+{
+    return d_ptr->m_legend;
+}
+
+void GraphicsPlotItem::removeLegend()
+{
+    Q_D(GraphicsPlotItem);
+
+    if(d->m_legend != nullptr){
+        d->m_legend->setParent(nullptr);
+        d->m_legend->removeAllItem();
+    }
+    d->m_legend = nullptr;
 }
 
 QRectF GraphicsPlotItem::boundingRect() const
@@ -374,7 +415,6 @@ void Graphics2DPlotGrid::calculateAbscissGrid()
 
             //TODO додумать что делать, если направляющая всего одна
             if( count >0){
-
                 drawLinesArray->resize(count);
                 for(int i = 0; i< count; i++){
                     (*drawLinesArray)[i] = QLineF( minValue+i*step, ordinateRange.min, minValue+i*step, ordinateRange.max);

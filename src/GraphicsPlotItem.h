@@ -2,6 +2,7 @@
 #define GRAPHICSPLOTITEM_H
 #include <QGraphicsItem>
 #include "Global.h"
+#include "GraphicsPlotLegend.h"
 
 class GraphicsPlotItemPrivate;
 class Graphics2DGraphItem;
@@ -52,6 +53,10 @@ public:
 
     Graphics2DGraphItem * addGraph(double *absciss, double *ordinate, qint32 length);
     void addDataItem(GraphicsDataItem *item);
+
+    void setLegend(GraphicsPlotLegend *legend);
+    GraphicsPlotLegend *legend();
+    void removeLegend();
 
 private:
     Q_DECLARE_PRIVATE(GraphicsPlotItem)

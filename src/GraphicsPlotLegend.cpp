@@ -3,7 +3,7 @@
 class GraphicsPlotLegendPrivate
 {
 public:
-    GraphicsPlotLegendPrivate() {}
+    GraphicsPlotLegendPrivate() { m_brush = QBrush(Qt::white);}
 
     QRectF m_rect;
     QPen m_pen;
@@ -19,6 +19,14 @@ GraphicsPlotLegend::GraphicsPlotLegend(QGraphicsItem *parent) :
     setFlag(QGraphicsItem::ItemClipsToShape, true);
 }
 
+GraphicsPlotLegend::GraphicsPlotLegend(const QRectF &rect, QGraphicsItem *parent):
+    QGraphicsObject(parent),
+    d_ptr(new GraphicsPlotLegendPrivate())
+{
+    setFlag(QGraphicsItem::ItemClipsToShape, true);
+    setRect(rect);
+}
+
 GraphicsPlotLegend::~GraphicsPlotLegend()
 {
     delete d_ptr;
@@ -30,6 +38,21 @@ void GraphicsPlotLegend::addDataItem(GraphicsDataItem *item)
     QObject::connect(item,  &QGraphicsObject::parentChanged, this, &GraphicsPlotLegend::itemRemove);
         QObject::connect(item, &GraphicsDataItem::titleChange, this, &GraphicsPlotLegend::dataItemChange);
         QObject::connect(item, &GraphicsDataItem::penItemChange, this, &GraphicsPlotLegend::dataItemChange);
+}
+
+void GraphicsPlotLegend::removeItem(GraphicsDataItem *item)
+{
+    d_ptr->addedItemHash.remove(item);
+    QObject::disconnect(item);
+    update();
+}
+
+void GraphicsPlotLegend::removeAllItem()
+{
+    for( QHash<GraphicsDataItem*, QStaticText>::Iterator iterator= d_ptr->addedItemHash.begin(); iterator != d_ptr->addedItemHash.end(); ++iterator){
+        iterator.key()->disconnect(0,this);
+    }
+    d_ptr->addedItemHash.clear();
 }
 
 
@@ -94,10 +117,7 @@ void GraphicsPlotLegend::paint(QPainter *painter, const QStyleOptionGraphicsItem
 
 void GraphicsPlotLegend::itemRemove()
 {
-    GraphicsDataItem * s=reinterpret_cast<GraphicsDataItem*>(sender());
-    d_ptr->addedItemHash.remove(s);
-    QObject::disconnect(s);
-    update();
+    removeItem(reinterpret_cast<GraphicsDataItem*>(sender()));
 }
 
 void GraphicsPlotLegend::dataItemChange()
