@@ -20,7 +20,7 @@ HEADERS += GraphicsPlotItem.h \
     GraphicsDataItem.h \
     GraphicsPlotLegend.h
 
-QMAKE_CXXFLAGS += -std=c++0x
+CONFIG+=C++11
 
 
 unix:!symbian {
