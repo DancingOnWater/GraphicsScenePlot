@@ -22,7 +22,7 @@
 class GraphicsDataItemPrivate;
 class Graphics2DHistogramItemPrivate;
 class Graphics2DGraphItemPrivate;
-class GraphicsDataItem: public QGraphicsObject
+class SRCSHARED_EXPORT GraphicsDataItem: public QGraphicsObject
 {
     Q_OBJECT
 public:
@@ -55,7 +55,7 @@ private:
 };
 
 
-class Graphics2DGraphItem: public GraphicsDataItem
+class SRCSHARED_EXPORT Graphics2DGraphItem: public GraphicsDataItem
 {
     Q_OBJECT
 public:
@@ -74,7 +74,7 @@ private:
     Graphics2DGraphItemPrivate *d_ptr;
 };
 
-class Graphics2DHistogramItem: public GraphicsDataItem
+class SRCSHARED_EXPORT Graphics2DHistogramItem: public GraphicsDataItem
 {
     Q_OBJECT
 public:

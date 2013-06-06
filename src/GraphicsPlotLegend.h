@@ -1,11 +1,11 @@
 #ifndef GRAPHICSPLOTLEGEND_H
 #define GRAPHICSPLOTLEGEND_H
-
 #include <QGraphicsObject>
+#include "Global.h"
 #include "GraphicsDataItem.h"
 
 class GraphicsPlotLegendPrivate;
-class GraphicsPlotLegend : public QGraphicsObject
+class SRCSHARED_EXPORT GraphicsPlotLegend : public QGraphicsObject
 {
     Q_OBJECT
 public:
