@@ -79,9 +79,9 @@ class SRCSHARED_EXPORT Graphics2DHistogramItem: public GraphicsDataItem
     Q_OBJECT
 public:
     Graphics2DHistogramItem(QGraphicsItem *parent =0);
-    Graphics2DHistogramItem(double *absciss, double ordinate, int length, QGraphicsItem *parent =0);
+    Graphics2DHistogramItem(double *absciss, double *ordinate, int length, QGraphicsItem *parent =0);
 
-    void setData(double *absciss, double ordinate, int length);
+    void setData(double *absciss, double *ordinate, int length);
 
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);

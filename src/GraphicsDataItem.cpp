@@ -199,7 +199,23 @@ QRectF Graphics2DHistogramItem::boundingRect() const
  void Graphics2DHistogramItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
      Q_UNUSED(painter) Q_UNUSED(option) Q_UNUSED(widget)
-}
+ }
 
+
+ Graphics2DHistogramItem::Graphics2DHistogramItem(QGraphicsItem *parent):
+     GraphicsDataItem(parent)
+ {
+ }
+
+ Graphics2DHistogramItem::Graphics2DHistogramItem(double *absciss, double *ordinate, int length, QGraphicsItem *parent):
+     GraphicsDataItem(parent)
+ {
+     setData(absciss, ordinate, length);
+ }
+
+ void Graphics2DHistogramItem::setData(double *absciss, double *ordinate, int length)
+ {
+     Q_UNUSED(absciss) Q_UNUSED(ordinate) Q_UNUSED(length)
+ }
 
 
