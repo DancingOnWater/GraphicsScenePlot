@@ -108,7 +108,7 @@ class Graphics2DGraphItemPrivate
     Graphics2DGraphItem *q_ptr;
     Graphics2DGraphItemPrivate(Graphics2DGraphItem *parent):q_ptr(parent){}
     QVector<QLineF> m_lines;
-    template<typename T> void setData(T absciss, T ordinate, qint32 length)
+    template<typename T> void setData( const T & absciss, const T & ordinate, qint32 length)
     {
         q_ptr->prepareGeometryChange();
         --length;
