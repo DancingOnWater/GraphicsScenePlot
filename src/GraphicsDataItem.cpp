@@ -193,10 +193,12 @@ void Graphics2DGraphItem::paint(QPainter *painter, const QStyleOptionGraphicsIte
 
 QRectF Graphics2DHistogramItem::boundingRect() const
 {
+    return QRectF();
 }
 
-void Graphics2DHistogramItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+ void Graphics2DHistogramItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+     Q_UNUSED(painter) Q_UNUSED(option) Q_UNUSED(widget)
 }
 
 

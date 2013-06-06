@@ -6,7 +6,7 @@
 
 QT       += widgets
 
-TARGET = src
+TARGET = GraphicsScenePlot
 TEMPLATE = lib
 
 DEFINES += SRC_LIBRARY
