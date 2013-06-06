@@ -57,17 +57,6 @@ private:
 
     QRectF m_rect;
 };
-void Graphics2DPlotGrid::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
-{
-    Q_UNUSED(option)
-    Q_UNUSED(widget)
-    paintAxeGuidLines(abscissSecondaryLines, painter, m_secondaryPen);
-        paintAxeGuidLines(abscissMainLines, painter, m_mainPen);
-        paintAxeGuidLines(ordinateSecondaryLines, painter, m_secondaryPen);
-        paintAxeGuidLines(ordinateMainLines, painter, m_mainPen);
-    painter->setPen(m_mainPen);
-    painter->drawRect(m_rect);
-}
 
 class GraphicsPlotItemPrivate
 {
@@ -172,9 +161,8 @@ void GraphicsPlotItemPrivate::compose()
 
     abscissText->setPos( (dataWidth - abscissText->boundingRect().width())/2.0 + m_sceneDataRect.y(), rect.bottom() - abscissText->boundingRect().height());
         ordinateText->setPos(0, (dataHeight - ordinateText->boundingRect().width())/2.0 + m_sceneDataRect.y());
-        q_ptr->update();
     calculateAndSetTransForm();
-
+    q_ptr->update();
 }
 
 void GraphicsPlotItemPrivate::calculateAndSetTransForm()
@@ -305,7 +293,6 @@ void GraphicsPlotItem::setMainGridLine(int axisNumber, double baseValue, double 
 void GraphicsPlotItem::setSecondaryLineAuto(bool isAuto)
 {
 }
-
 
 Graphics2DGraphItem *GraphicsPlotItem::addGraph(double *absciss, double *ordinate, qint32 length)
 {
@@ -500,6 +487,18 @@ void GraphicsPlotItemPrivate::calculateOrdinateGrid()
     ordinateMainNocks->updateNocks(nocksList);
         calculteLine(&ordinateSecondaryLines, &(gridItem->ordinateSecondaryLines.lines));
         ordinateSecondaryNocks->updateNocks(nocksList);
+}
+
+void Graphics2DPlotGrid::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    Q_UNUSED(option)
+    Q_UNUSED(widget)
+    paintAxeGuidLines(abscissSecondaryLines, painter, m_secondaryPen);
+        paintAxeGuidLines(abscissMainLines, painter, m_mainPen);
+        paintAxeGuidLines(ordinateSecondaryLines, painter, m_secondaryPen);
+        paintAxeGuidLines(ordinateMainLines, painter, m_mainPen);
+    painter->setPen(m_mainPen);
+    painter->drawRect(m_rect);
 }
 
 void Graphics2DPlotGrid::paintAxeGuidLines(const AxisGuideLines& axe, QPainter *painter, const QPen &linePen)

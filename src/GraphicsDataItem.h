@@ -4,6 +4,21 @@
 
 #include "Global.h"
 
+
+/*!
+ * \class GraphicsDataItem
+ *\brief base class for  items-data.
+ *\fn GraphicsDataItem::setTitle
+ *Set item title. Use in legend
+ *\fn GraphicsDataItem:: title()
+ *return title
+ *\fn GraphicsDataItem::dataItemChange()
+ *emit when data change. Must be used inc hild classes.
+ *\fn GraphicsDataItem::penItemChange()
+ *Emits when pen change
+ *\fn GraphicsDataItem::titleChange()
+ *Emits when title change
+ */
 class GraphicsDataItemPrivate;
 class Graphics2DHistogramItemPrivate;
 class Graphics2DGraphItemPrivate;
