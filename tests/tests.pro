@@ -2,4 +2,5 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     GraphicsPlotItem \
-    GraphicsPlotLegend
+    GraphicsPlotLegend \
+    Graphics2DHistogramm

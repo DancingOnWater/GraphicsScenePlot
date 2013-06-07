@@ -33,6 +33,7 @@ private Q_SLOTS:
     void testCase1();
     void simpleTestGrid();
     void simple2DGraphTest();
+    void simple2Histogrammtest();
     void simpleLegendTest();
 };
 
@@ -70,6 +71,23 @@ void GraphicsPlotItemTest::simple2DGraphTest()
     qApp->exec();
 }
 
+void GraphicsPlotItemTest::simple2Histogrammtest()
+{
+    COMMONPART
+    QVector<float> absciss; QVector<float> ordinate;
+    for(int i = 0; i<=10; ++i){
+        absciss.append(-20+2*i);
+        ordinate.append(-30+2*i);
+    }
+
+    Graphics2DHistogramItem *dataItem = new Graphics2DHistogramItem();
+    dataItem->setBrush(QColor(Qt::red));
+    dataItem->setData(absciss, ordinate);
+
+    plot->addDataItem(dataItem);
+    qApp->exec();
+}
+
 void GraphicsPlotItemTest::simpleLegendTest()
 {
     COMMONPART
@@ -87,6 +105,7 @@ void GraphicsPlotItemTest::simpleLegendTest()
     plot->addDataItem(dataItem);
 
     plot->setLegend(new GraphicsPlotLegend(QRectF(0, 0, 100, 100)));
+    plot->legend()->setPos(400, 370);
     dataItem->setPen(QColor(Qt::red));
 
     qApp->exec();

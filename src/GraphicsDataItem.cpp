@@ -191,31 +191,101 @@ void Graphics2DGraphItem::paint(QPainter *painter, const QStyleOptionGraphicsIte
 }
 
 
+class Graphics2DHistogramItemPrivate
+{
+    Q_DECLARE_PUBLIC(Graphics2DHistogramItem)
+    Graphics2DHistogramItem *q_ptr;
+    Graphics2DHistogramItemPrivate(Graphics2DHistogramItem *parent):q_ptr(parent){}
+
+    QRectF m_rect;
+    QVector<QRectF> m_drawRects;
+
+
+    template<typename T> void setData(const T & absciss, const T & ordinate, int length)
+    {
+        q_ptr->prepareGeometryChange();
+        m_drawRects.resize(length);
+
+        Range abscissRange;
+        if(absciss[0] < absciss[length]){
+            abscissRange.min = absciss[0];
+                abscissRange.max = absciss[length];
+        }
+        else{
+            abscissRange.min = absciss[length];
+                abscissRange.max = absciss[0];
+        }
+        Range ordinateRange;
+        ordinateRange.min = ordinate[0];
+            ordinateRange.max = ordinate[0];
+
+        for(int i =0; i < length; ++i)
+        {
+            if(ordinate[i] > ordinateRange.max)
+                ordinateRange.max = ordinate[i];
+            else if(ordinate[i] < ordinateRange.min )
+                ordinateRange.min = ordinate[i];
+            m_drawRects[i].setRect(absciss[i],  ordinate[i], absciss[i+1] - absciss[i], -ordinate[i]);
+        }
+
+        if(ordinateRange.min*ordinateRange.max <0)
+            m_rect.setRect(abscissRange.min, ordinateRange.min, abscissRange.max-abscissRange.min, ordinateRange.max-ordinateRange.min);
+        else if(ordinateRange.min <0)
+            m_rect.setRect(abscissRange.min, ordinateRange.min, abscissRange.max-abscissRange.min, -ordinateRange.min);
+        else
+            m_rect.setRect(abscissRange.min, ordinateRange.max, abscissRange.max-abscissRange.min, -ordinateRange.max);
+        q_ptr->setAbscissRange(abscissRange.min, abscissRange.max);
+        q_ptr->setOrdinateRange(ordinateRange.min, ordinateRange.max);
+        q_ptr->update();
+    }
+};
+
+
 QRectF Graphics2DHistogramItem::boundingRect() const
 {
-    return QRectF();
+    return d_ptr->m_rect;
 }
 
  void Graphics2DHistogramItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-     Q_UNUSED(painter) Q_UNUSED(option) Q_UNUSED(widget)
- }
+    Q_UNUSED(option) Q_UNUSED(widget)
+    painter->setPen(pen());
+    painter->setBrush(brush());
+    painter->drawRects(d_ptr->m_drawRects);
+}
 
 
- Graphics2DHistogramItem::Graphics2DHistogramItem(QGraphicsItem *parent):
-     GraphicsDataItem(parent)
- {
- }
+Graphics2DHistogramItem::Graphics2DHistogramItem(QGraphicsItem *parent):
+ GraphicsDataItem(parent),
+ d_ptr(new Graphics2DHistogramItemPrivate(this))
+{
+}
 
- Graphics2DHistogramItem::Graphics2DHistogramItem(double *absciss, double *ordinate, int length, QGraphicsItem *parent):
-     GraphicsDataItem(parent)
- {
-     setData(absciss, ordinate, length);
- }
+Graphics2DHistogramItem::Graphics2DHistogramItem(float *absciss, float *ordinate, int length, QGraphicsItem *parent):
+GraphicsDataItem(parent),
+d_ptr(new Graphics2DHistogramItemPrivate(this))
+{
+    setData(absciss, ordinate, length);
+}
 
- void Graphics2DHistogramItem::setData(double *absciss, double *ordinate, int length)
- {
-     Q_UNUSED(absciss) Q_UNUSED(ordinate) Q_UNUSED(length)
- }
+Graphics2DHistogramItem::~Graphics2DHistogramItem()
+{
+    delete d_ptr;
+}
+
+void Graphics2DHistogramItem::setData(float *absciss, float *ordinate, int length)
+{
+    d_ptr->setData<float*>(absciss, ordinate, length);
+}
+
+void Graphics2DHistogramItem::setData(QList<float> absciss, QList<float> ordinate)
+{
+    d_ptr->setData<QList<float>>(absciss, ordinate,qMin(absciss.size()-1, ordinate.size()));
+}
+
+void Graphics2DHistogramItem::setData(QVector<float> absciss, QVector<float> ordinate)
+{
+    d_ptr->setData<QVector<float>>(absciss, ordinate,qMin(absciss.size()-1, ordinate.size()));
+}
 
 

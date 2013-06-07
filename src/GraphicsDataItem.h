@@ -19,6 +19,13 @@
  *\fn GraphicsDataItem::titleChange()
  *Emits when title change
  */
+
+/*!
+ *\class Graphics2DHistogramItem
+ *\fn Graphics2DHistogramItem::setData(double *absciss, double *ordinate, int length)
+ *Draw hisogramm in next manner:
+ *ordinate(i) correspond interval absciss(i+1) - absciss(i)
+ */
 class GraphicsDataItemPrivate;
 class Graphics2DHistogramItemPrivate;
 class Graphics2DGraphItemPrivate;
@@ -79,11 +86,17 @@ class SRCSHARED_EXPORT Graphics2DHistogramItem: public GraphicsDataItem
     Q_OBJECT
 public:
     Graphics2DHistogramItem(QGraphicsItem *parent =0);
-    Graphics2DHistogramItem(double *absciss, double *ordinate, int length, QGraphicsItem *parent =0);
+    Graphics2DHistogramItem(float *absciss, float *ordinate, int length, QGraphicsItem *parent =0);
+    ~Graphics2DHistogramItem();
 
-    void setData(double *absciss, double *ordinate, int length);
+    void setData(float *absciss, float *ordinate, int length);
+    void setData(QList<float> absciss, QList<float> ordinate);
+    void setData(QVector<float> absciss, QVector<float> ordinate);
 
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+private:
+    Q_DECLARE_PRIVATE(Graphics2DHistogramItem)
+    Graphics2DHistogramItemPrivate *d_ptr;
 
 };
